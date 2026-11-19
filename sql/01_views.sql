@@ -6,6 +6,13 @@
 --   GROSS sales (v_sales)     = every valid sale line, including ones that were later cancelled.
 --   NET sales   (v_net_sales) = gross sales minus the lines that were later cancelled in full.
 
+-- A composite index covers every column the cancellation matching below compares.
+-- Without it, SQLite can pick a poor lookup plan and the build takes forever on 1 million rows.
+-- ANALYZE then lets SQLite learn the table's shape so it chooses well.
+CREATE INDEX IF NOT EXISTS idx_match
+    ON transactions (customer_id, stock_code, quantity, unit_price, invoice_date);
+ANALYZE;
+
 -- Drop first so this script can be re-run without errors (views before the things they use).
 DROP VIEW  IF EXISTS v_monthly_net_sales;
 DROP VIEW  IF EXISTS v_net_sales;
@@ -39,36 +46,42 @@ GROUP BY month;
 
 -- cancelled_sale_lines: the sale lines that a cancellation later undid.
 -- A cancellation row (a "C" invoice) has no link to the sale it undoes, so we match on:
--- same customer, same product, opposite quantity, and the cancellation is not earlier than the sale.
--- To stop one cancellation from wiping out several identical orders, each group is numbered
--- in date order with ROW_NUMBER(): the 1st sale pairs with the 1st cancellation, the 2nd with the 2nd.
+-- same customer, same product, opposite quantity, SAME UNIT PRICE, and the sale happened first.
+-- Matching the unit price matters: a cancellation of 60 items at GBP 4.95 must not be paired
+-- with a different sale of 60 items at GBP 649.50.
+-- Rule: each cancellation undoes the LATEST earlier sale that fits, because cancellations
+-- usually follow their sale within minutes or days.
+-- ROW_NUMBER() ... ORDER BY date DESC numbers the candidate sales for each cancellation,
+-- newest first, and closeness = 1 picks the newest.
+-- DISTINCT stops one sale line being counted twice if two cancellations pick the same one.
 -- This is a TABLE, not a view, so the matching is calculated once when the database is built.
--- rowid is SQLite's built-in row number; it identifies each sale line.
+-- rowid is SQLite's built-in row number; it identifies each row.
 CREATE TABLE cancelled_sale_lines AS
-WITH sales_ranked AS (
-    SELECT
-        rowid AS line_id, customer_id, stock_code, quantity, invoice_date,
-        ROW_NUMBER() OVER (PARTITION BY customer_id, stock_code, quantity
-                           ORDER BY invoice_date) AS n
-    FROM transactions
-    WHERE is_valid_sale = 1 AND customer_id IS NOT NULL
-),
-cancels_ranked AS (
-    SELECT
-        customer_id, stock_code, -quantity AS quantity, invoice_date,
-        ROW_NUMBER() OVER (PARTITION BY customer_id, stock_code, -quantity
-                           ORDER BY invoice_date) AS n
+WITH cancels AS (
+    SELECT rowid AS cancel_id, customer_id, stock_code,
+           -quantity AS quantity,                 -- flip the sign so it lines up with the sale
+           unit_price, invoice_date
     FROM transactions
     WHERE is_cancellation = 1 AND customer_id IS NOT NULL
+),
+candidates AS (
+    SELECT
+        c.cancel_id,
+        s.rowid AS line_id,
+        ROW_NUMBER() OVER (PARTITION BY c.cancel_id
+                           ORDER BY s.invoice_date DESC) AS closeness
+    FROM cancels c
+    JOIN transactions s
+      ON  s.customer_id   = c.customer_id
+      AND s.stock_code    = c.stock_code
+      AND s.quantity      = c.quantity
+      AND s.unit_price    = c.unit_price
+      AND s.invoice_date <= c.invoice_date
+    WHERE s.is_valid_sale = 1
 )
-SELECT s.line_id
-FROM sales_ranked s
-JOIN cancels_ranked c
-  ON  c.customer_id  = s.customer_id
-  AND c.stock_code   = s.stock_code
-  AND c.quantity     = s.quantity
-  AND c.n            = s.n
-  AND c.invoice_date >= s.invoice_date;
+SELECT DISTINCT line_id
+FROM candidates
+WHERE closeness = 1;
 
 -- v_net_sales: valid sales without the lines that were later cancelled in full.
 -- Guest checkouts (no customer ID) cannot be matched, so they always stay in.
