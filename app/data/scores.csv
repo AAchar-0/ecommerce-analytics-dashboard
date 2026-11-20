@@ -1,0 +1,7 @@
+model,MAE,RMSE,MAPE_%,basis
+seasonal_naive,63357.13,78024.31,9.01,net
+seasonal_naive_growth,75191.42,88602.3,9.52,net
+naive,190853.97,259618.35,24.55,net
+seasonal_naive,62223.74,76118.47,8.72,gross
+seasonal_naive_growth,79937.26,87938.76,10.51,gross
+naive,193195.49,258624.06,24.62,gross

@@ -1,0 +1,7 @@
+month,model,forecast,low_10pct,high_90pct,basis
+2011-12,seasonal_naive,766952.8,695982.3,887364.05,net
+2012-01,seasonal_naive,565181.73,512882.25,653915.01,net
+2012-02,seasonal_naive,504936.98,458212.29,584211.86,net
+2011-12,seasonal_naive,775572.23,705286.9,887544.98,gross
+2012-01,seasonal_naive,670361.99,609611.22,767145.08,gross
+2012-02,seasonal_naive,507783.42,461766.14,581094.33,gross
