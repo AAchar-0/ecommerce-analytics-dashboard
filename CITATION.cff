@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use this software, its method or its documentation, please cite it as below."
+title: "E-commerce Analytics and Forecasting Dashboard"
+type: software
+authors:
+  - family-names: "A'Acharo"
+    given-names: "Anade Archyphilus"
+repository-code: "https://github.com/AAchar-0/ecommerce-analytics-dashboard"
+url: "https://aacharo-retail-analytics.streamlit.app/"
+license: MIT
+date-released: 2026-11-20
+abstract: "A Python and SQL project that cleans two years of retail transactions, answers business questions in SQL, evaluates forecasting models with a leakage-free rolling backtest, and presents the results in an interactive Streamlit dashboard."
+keywords:
+  - data analytics
+  - forecasting
+  - SQL
+  - Python
+  - Streamlit
+references:
+  - type: data
+    title: "Online Retail II"
+    authors:
+      - family-names: "Chen"
+        given-names: "D."
+    year: 2012
+    doi: "10.24432/C5CG6D"
+    publisher:
+      name: "UCI Machine Learning Repository"
+    license: CC-BY-4.0

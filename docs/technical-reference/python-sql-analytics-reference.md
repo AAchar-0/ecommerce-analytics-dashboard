@@ -172,7 +172,7 @@ def test_backtest_never_uses_future_data():
 
 **Application structure.** `app/streamlit_app.py` loads the exported CSV files with `@st.cache_data`. Sidebar widgets (`st.radio`, `st.select_slider`) re-run the script from top to bottom on every change. Layout uses `st.tabs` and `st.columns`; headline figures use `st.metric`.
 
-**Touch behaviour.** Plotly charts are made non-interactive for zoom and pan so that a swipe scrolls the page instead of being captured by the chart. Tooltips remain available on tap.
+**Chart interactivity.** The charts keep Plotly's default interactions (hover tooltips, zoom, pan and the toolbar) so that viewers can investigate the data. On touch screens a swipe across a chart can pan or zoom it. The toolbar's reset (home) button restores the original view. If this proves disruptive, axes can be locked and the toolbar hidden:
 
 ```python
 fig.update_xaxes(fixedrange=True)
@@ -208,7 +208,7 @@ Each push to `main` redeploys the application. Free applications may sleep after
 | Forecast looks better than it should | Test data leaked into training | Rolling-origin backtest plus a leakage test |
 | Seasonal model fails or overfits | Fewer than two full seasonal cycles | Use baselines and state the limitation |
 | Deployed build is slow or fails | Full development requirements deployed | Provide `app/requirements.txt` with only runtime packages |
-| Chart zooms or pans during a scroll on a phone | Default Plotly touch interaction | `fixedrange=True` on both axes and hide the mode bar |
+| Chart pans or zooms during a swipe on a phone | Default Plotly touch interaction, retained deliberately for exploration | Use the toolbar's reset button; to lock charts, set `fixedrange=True` on both axes and hide the mode bar |
 | README images do not display | README in a subfolder, or wrong relative path | Keep `README.md` in the repository root |
 | Data or environment folders appear in `git status` | Missing ignore rule | Add them to `.gitignore` before the first commit |
 
